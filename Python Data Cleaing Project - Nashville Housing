@@ -1,0 +1,124 @@
+import pandas as pd
+
+df = pd.read_excel(r"C:\*****\Raw Data - Nashville Housing.xlsx")
+
+
+
+# Populate Property Address data
+df['PropertyAddress'].isnull().sum()
+
+PropertyAddress_na = list(df[df['PropertyAddress'].isnull()]['ParcelID'])
+df[df['ParcelID'].isin(PropertyAddress_na)].sort_values(by = ['ParcelID','PropertyAddress'])
+
+pd.set_option('display.max.rows',65)
+
+df = df.sort_values(by = ['ParcelID','PropertyAddress'])
+df['PropertyAddress'] = df['PropertyAddress'].fillna(method = 'ffill')
+
+df['PropertyAddress'].isnull().sum()
+
+df = df.sort_values(by = 'ParcelID')
+df['PropertyAddress'] = df['PropertyAddress'].str.strip()
+
+
+
+
+# Breaking out Property Address into Individual Columns (Address, City)
+PropertyAddressSplit = df['PropertyAddress'].str.split(',', 1, expand = True)
+
+df = pd.concat([df,PropertyAddressSplit], axis = 1)
+df.columns = ['UniqueID ', 'ParcelID', 'LandUse', 'PropertyAddress', 'SaleDate',
+              'SalePrice', 'LegalReference', 'SoldAsVacant', 'OwnerName',
+              'OwnerAddress', 'Acreage', 'TaxDistrict', 'LandValue', 'BuildingValue',
+              'TotalValue', 'YearBuilt', 'Bedrooms', 'FullBath', 'HalfBath', 'PropertySplitAddress', 'PropertySplitCity']
+
+
+
+
+# Breaking out Owner Address into Individual Columns (Address, City, State)
+OwnerAddressSplit = df['OwnerAddress'].str.split(',', 2, expand = True)
+
+df = pd.concat([df, OwnerAddressSplit], axis = 1)
+df.columns = ['UniqueID ', 'ParcelID', 'LandUse', 'PropertyAddress', 'SaleDate',
+              'SalePrice', 'LegalReference', 'SoldAsVacant', 'OwnerName',
+              'OwnerAddress', 'Acreage', 'TaxDistrict', 'LandValue', 'BuildingValue',
+              'TotalValue', 'YearBuilt', 'Bedrooms', 'FullBath', 'HalfBath', 'PropertySplitAddress', 'PropertySplitCity',
+              'OwnerSplitAddress', 'OwnerSplitCity', 'OwnerSplitState']
+
+
+
+# Change Yes and No to Y and N in SoldAsVacant Field
+df['SoldAsVacant'].unique()
+
+df['SoldAsVacant'] = df['SoldAsVacant'].str.replace('No', 'N')
+df['SoldAsVacant'] = df['SoldAsVacant'].str.replace('Yes', 'Y')
+df['SoldAsVacant'].unique()
+
+
+
+# Modify LandUse Field
+df['LandUse'].unique()
+
+for i, x in enumerate(df['LandUse']):
+    if x == 'VACANT RES LAND':
+        df.iloc[i,2] = 'VACANT RESIDENTIAL LAND'
+    elif x == 'VACANT RESIENTIAL LAND':
+        df.iloc[i,2] = 'VACANT RESIDENTIAL LAND'
+    elif x == 'RESIDENTIAL CONDO':
+        df.iloc[i,2] = 'CONDO'
+    elif x == 'SINGLE FAMILY':
+        df.iloc[i,2] = 'SINGLE FAMILY'
+    elif x == 'VACANT RESIDENTIAL LAND':
+        df.iloc[i,2] = 'VACANT RESIDENTIAL LAND'
+    elif x == 'ZERO LOT LINE':
+        df.iloc[i,2] = 'ZERO LOT LINE'
+    elif x == 'DUPLEX':
+        df.iloc[i,2] = 'DUPLEX/TRIPLEX/QUADPLEX'
+    elif x == 'TRIPLEX':
+        df.iloc[i,2] = 'DUPLEX/TRIPLEX/QUADPLEX'
+    elif x == 'QUADPLEX':
+        df.iloc[i,2] = 'DUPLEX/TRIPLEX/QUADPLEX'
+    else:
+        df.iloc[i,2] = 'OTHER'
+df['LandUse'].unique()
+
+
+
+# Modify LandUse Field
+df['PropertySplitCity'] = df['PropertySplitCity'].str.strip()
+df['PropertySplitCity'].unique()
+
+df.groupby('PropertySplitCity')['PropertySplitCity'].count().sort_values(ascending = False)
+df[df['PropertySplitCity'] == 'UNKNOWN']
+df[df['PropertySplitAddress'].str.contains('5TH AVE N')]['PropertySplitCity'].unique()
+df.loc[df[df['PropertySplitCity'] == 'UNKNOWN'].index, 'PropertySplitCity'] = 'NASHVILLE'
+df[df['PropertySplitAddress'].str.contains('5TH AVE N')]['PropertySplitCity'].unique()
+
+
+
+# Modify OwnerSplitState Field
+df['OwnerSplitState'] = df['OwnerSplitState'].str.strip()
+df['OwnerSplitState'].unique()
+
+df['OwnerSplitState'] = 'TN'
+df['OwnerSplitState'].unique()
+
+
+
+# Save Duplicates in a Temp Table & Remove Duplicates
+duplicates = df[df.duplicated(subset = ['ParcelID', 'PropertyAddress', 'SalePrice', 'SaleDate', 'LegalReference'], keep = False)]
+
+df = df.drop_duplicates(subset = ['ParcelID', 'PropertyAddress', 'SalePrice', 'SaleDate', 'LegalReference'], keep = 'first')
+
+
+
+# Strip Spaces
+df.info()
+object_cols = [1,2,3,6,7,8,9,11,19,20,21,22,23]
+
+for i in object_cols:
+    df.iloc[:,i] = df.iloc[:,i].str.strip()
+
+
+    
+df
