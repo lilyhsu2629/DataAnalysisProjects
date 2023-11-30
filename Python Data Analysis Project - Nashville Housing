@@ -1,0 +1,112 @@
+import pandas as pd
+
+df = pd.read_excel(r"C:\*****\Cleaned Data - Nashville Housing.xlsx")
+df
+# df.info()
+
+
+
+# Quick Overview
+print('----- Quick Overview -----\n')
+print('State:', df.loc[0, 'OwnerSplitState'])
+print('Total Housing Sale:', str(df.nunique()[0]))
+print('Average Housing Sale Price:', str(int(df['SalePrice'].mean())))
+print('Sale Date:', str(min(df['SaleDate']).date()), '~', str(max(df['SaleDate']).date()))
+print('\n\n')
+
+
+
+# Add a new column 'SaleYear' for further analysis
+for i in range(0, df.shape[0]):
+    df.loc[i, 'SaleYear'] = df.loc[i,'SaleDate'].strftime('%Y')
+
+
+
+# Sale Price Info by Year
+print('----- Sale Price Info by Year -----\n')
+print(df.groupby('SaleYear').agg({'SalePrice':['count', 'mean', 'max', 'min']}))
+print('\n\n')
+
+
+
+# Sale Price Info by Year        
+print('----- Sale Price Info by Year -----\n')
+print(df.groupby('SaleYear').agg({'SalePrice':['count', 'mean', 'max', 'min']}))
+print('\n\n')
+
+
+
+# Highest Sale Price Property
+print('----- Highest Sale Price Property -----\n')
+print(df[df['SalePrice'] == df['SalePrice'].max()])
+print('\n\n')
+
+
+
+# Lowest Sale Price Property
+print('----- Lowest Sale Price Property -----\n')
+print(df[df['SalePrice'] == df['SalePrice'].min()])
+print('\n\n')
+
+
+
+# Sale Price Info by LandUse
+print('----- Sale Price Info by LandUse -----\n')
+print(df.groupby('LandUse').agg({'SalePrice':['count', 'mean', 'max', 'min']}))
+print('\n\n')
+
+
+
+# LandUse Percentage
+print('----- LandUse Percentage -----\n')
+list_landuse = list(df['LandUse'].unique())
+for i in list_landuse:
+    percentage = (df.groupby('LandUse').size()[i]/df.groupby('LandUse').size().sum()) * 100
+    print(f'{i}: {percentage:.2f}%')
+print('\n\n')
+
+    
+
+# Sale Price Info by SoldAsVacant
+print('----- Sale Price Info by SoldAsVacant -----\n')
+print(df.groupby('SoldAsVacant').agg({'SalePrice': ['count', 'mean', 'max', 'min']}))
+print('\n\n')
+
+
+
+# SoldAsVacantPercentage for each LandUse
+print('----- SoldAsVacantPercentage for each LandUse -----\n')
+list_landuse = list(df['LandUse'].unique())
+for i in list_landuse:
+    percentage = (1 - df[df['LandUse'] == i].groupby('SoldAsVacant').size()['No'] / df[df['LandUse'] == i].groupby('SoldAsVacant').size().sum()) * 100
+    if percentage > 0:
+        print(f'{i}: {percentage:.2f}%')
+    else:
+        print(f'{i}: 0.00%')
+print('\n\n')
+
+        
+        
+# Sale Price Info by PropertySplitCity
+print('----- Sale Price Info by PropertySplitCity -----\n')
+print(df.groupby('PropertySplitCity').agg({'SalePrice': ['count', 'mean', 'max', 'min']}))
+print('\n\n')
+
+
+
+# Num Of Sale: City vs State
+print('----- Num Of Sale: City vs State -----\n')
+list_city = list(df['PropertySplitCity'].unique())
+for i in list_city:
+    percentage = (df.groupby('PropertySplitCity').size()[i] / df.groupby('PropertySplitCity').size().sum()) * 100
+    print(f'{i}: {percentage:.2f}%')
+print('\n\n')
+
+    
+    
+# Sale Price: City Average vs State Average
+print('----- Sale Price: City Average vs State Average -----\n')
+list_city = list(df['PropertySplitCity'].unique())
+for i in list_city:
+    percentage = (df[df['PropertySplitCity'] == i]['SalePrice'].mean() - df['SalePrice'].mean()) / df['SalePrice'].mean() * 100
+    print(f'{i}: {percentage:.2f}%')
